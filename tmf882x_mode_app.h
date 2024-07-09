@@ -33,7 +33,10 @@
 #ifndef __TMF882X_MODE_APP_H
 #define __TMF882X_MODE_APP_H
 
-#include <stdbool.h>
+//#include <stdbool.h> //TODO ESU
+#include <linux/module.h>
+#include <linux/kernel.h>
+
 #include <linux/i2c/ams/tmf882x_config.h>
 #include <linux/i2c/ams/tmf882x.h>
 #include "tmf882x_host_interface.h"
@@ -225,7 +228,7 @@ struct tmf882x_mode_app {
         uint8_t uid[sizeof(uint32_t)];
 
         // cached timestamp used for clock correction
-        struct timespec timestamp;
+        struct timespec64 timestamp;
 
     } volat_data;
 

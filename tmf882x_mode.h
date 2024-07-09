@@ -33,7 +33,9 @@
 #ifndef __TMF882X_MODE_H
 #define __TMF882X_MODE_H
 
-#include <stddef.h>
+//#include <linux/stddef.h> //TODO ESU
+#include <linux/module.h>
+#include <linux/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

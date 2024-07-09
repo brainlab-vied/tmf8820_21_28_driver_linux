@@ -2247,7 +2247,7 @@ static void tof_ram_patch_callback(const struct firmware *cfg, void *ctx)
     struct tof_sensor_chip *chip = ctx;
     int result = 0;
     u64 fwdl_time = 0;
-    struct timespec start_ts = {0}, end_ts = {0};
+    struct timespec64 start_ts = {0}, end_ts = {0};
     if (!chip) {
         pr_err("AMS-TOF Error: Ram patch callback NULL context pointer.\n");
     }
@@ -2266,14 +2266,14 @@ static void tof_ram_patch_callback(const struct firmware *cfg, void *ctx)
 
     dev_info(&chip->client->dev, "%s: Ram patch in progress...\n", __func__);
     //Start fwdl timer
-    getnstimeofday(&start_ts);
+    ktime_get_real_ts64(&start_ts);
     result = tmf882x_fwdl(&chip->tof, FWDL_TYPE_HEX, cfg->data, cfg->size);
     if (result)
         goto err_fwdl;
     //Stop fwdl timer
-    getnstimeofday(&end_ts);
+    ktime_get_real_ts64(&end_ts);
     //time in ms
-    fwdl_time = timespec_sub(end_ts, start_ts).tv_nsec / 1000000;
+    fwdl_time = timespec64_sub(end_ts, start_ts).tv_nsec / 1000000;
     dev_info(&chip->client->dev,
             "%s: Ram patch complete, dl time: %llu ms\n", __func__, fwdl_time);
 err_fwdl:
@@ -2854,7 +2854,7 @@ input_dev_alloc_err:
     return error;
 }
 
-static int tof_remove(struct i2c_client *client)
+static void tof_remove(struct i2c_client *client)
 {
     struct tof_sensor_chip *chip = i2c_get_clientdata(client);
 
@@ -2887,7 +2887,6 @@ static int tof_remove(struct i2c_client *client)
 
     i2c_set_clientdata(client, NULL);
     dev_info(&client->dev, "%s\n", __func__);
-    return 0;
 }
 
 static struct i2c_device_id tof_idtable[] = {

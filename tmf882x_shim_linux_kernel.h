@@ -29,7 +29,8 @@
 #ifndef __TMF882X_SHIM_LINUX_KERNEL_H
 #define __TMF882X_SHIM_LINUX_KERNEL_H
 
-#include <linux/time.h>
+#include <linux/ktime.h>
+#include <linux/timekeeping.h>
 #include "tmf882x_driver.h"
 
 #define tof_err(p, fmt, ...) \
@@ -84,9 +85,9 @@ static inline int32_t tof_queue_msg(struct tof_sensor_chip *chip, struct tmf882x
     return tof_frwk_queue_msg(chip, msg);
 }
 
-static inline void tof_get_timespec(struct timespec *ts)
+static inline void tof_get_timespec(struct timespec64 *ts)
 {
-    getnstimeofday(ts);
+    ktime_get_real_ts64(ts);
 }
 
 #endif

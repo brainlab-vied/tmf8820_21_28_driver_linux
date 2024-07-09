@@ -509,7 +509,7 @@ static int32_t check_cmd_status_timeout(struct tmf882x_mode_app *app,
     return check_cmd_status(app, MS_TIME_TO_RETRIES(timeout_ms - wait_ms));
 }
 
-static inline uint32_t timespec_to_usec(struct timespec ts)
+static inline uint32_t timespec_to_usec(struct timespec64 ts)
 {
     return ((ts.tv_sec * 1000000) + ((ts.tv_nsec + 500)/ 1000));
 }
@@ -721,7 +721,7 @@ static int32_t clock_skew_correction(struct tmf882x_mode_app *app,
                                      struct tmf882x_msg_meas_results *results)
 {
     // Assume timespec is defined by platform include files
-    struct timespec current_ts = {0};
+    struct timespec64 current_ts = {0};
     uint32_t usec_epoch = 0;
     uint32_t cr_dist = 0;
     uint32_t i = 0;
