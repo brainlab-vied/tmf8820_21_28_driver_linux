@@ -7,7 +7,7 @@ tmf882x-y += tmf882x_driver.o tmf882x_clock_correction.o tmf882x_mode.o tmf882x_
 
 
 all:
-	$(MAKE) -C $(KERNEL_SRC) $(EXTRA_FLAGS) M=$(SRC)
+	$(MAKE) CONFIG_SENSORS_TMF882X=m -C $(KERNEL_SRC) $(EXTRA_FLAGS) M=$(SRC)
 	
 modules_install:
 	$(MAKE) -C $(KERNEL_SRC) $(EXTRA_FLAGS) M=$(SRC) modules_install

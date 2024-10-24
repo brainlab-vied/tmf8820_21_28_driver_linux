@@ -15,7 +15,7 @@ fi
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 source $DIR/common.sh
 
-pushd $DIR/../src
+pushd $DIR/../
 source "$MY_YOCTO_SDK_BASE/environment-setup-cortexa72-cortexa53-brainlab-linux"
 export KERNEL_SRC=$MY_YOCTO_SDK_BASE/$YOCTO_SDK_KRNL_SRC_SYMLINK
 

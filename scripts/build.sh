@@ -28,6 +28,6 @@ source "$MY_YOCTO_SDK_BASE/environment-setup-cortexa72-cortexa53-brainlab-linux"
 export KERNEL_SRC=$MY_YOCTO_SDK_BASE/$YOCTO_SDK_KRNL_SRC_SYMLINK
 
 echo "Building version: $MY_RELEASE_TAG"
-make CONFIG_SENSORS_TMF882X=m SW_VER=$MY_RELEASE_TAG
+make SW_VER=$MY_RELEASE_TAG
 
 popd
