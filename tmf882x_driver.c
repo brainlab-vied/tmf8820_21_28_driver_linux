@@ -259,7 +259,7 @@ static int tof_poweron_device(struct tof_sensor_chip *chip)
 {
     int error = 0;
     if (chip->pdata->gpiod_enable &&
-        !gpiod_get_value(chip->pdata->gpiod_enable)) {
+        !gpiod_get_value_cansleep(chip->pdata->gpiod_enable)) {
         error = gpiod_direction_output(chip->pdata->gpiod_enable, 1);
         if (error) {
             dev_err(&chip->client->dev,
@@ -405,7 +405,7 @@ static ssize_t chip_enable_show(struct device * dev,
         AMS_MUTEX_UNLOCK(&chip->lock);
         return -EIO;
     }
-    state = gpiod_get_value(chip->pdata->gpiod_enable);
+    state = !gpiod_get_value_cansleep(chip->pdata->gpiod_enable);
     dev_info(dev, "%s: %u\n", __func__, state);
     AMS_MUTEX_UNLOCK(&chip->lock);
     return scnprintf(buf, PAGE_SIZE, "%d\n", !!state);
