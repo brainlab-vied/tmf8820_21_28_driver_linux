@@ -72,6 +72,9 @@
     mutex_unlock(m); \
 }
 
+#define TMF_DEFAULT_I2C_ADDR 0x41
+static __u16 tof_glob_devaddr = TMF_DEFAULT_I2C_ADDR;
+
 struct tmf882x_platform_data {
     const char *tof_name;
     struct gpio_desc *gpiod_interrupt;
@@ -2097,12 +2100,12 @@ int tof_frwk_i2c_read(struct tof_sensor_chip *chip, char reg, char *buf, int len
     int ret;
 
     msgs[0].flags = 0;
-    msgs[0].addr  = client->addr;
+    msgs[0].addr  = tof_glob_devaddr;
     msgs[0].len   = 1;
     msgs[0].buf   = &reg;
 
     msgs[1].flags = I2C_M_RD;
-    msgs[1].addr  = client->addr;
+    msgs[1].addr  = tof_glob_devaddr;
     msgs[1].len   = len;
     msgs[1].buf   = buf;
 
@@ -2135,7 +2138,7 @@ int tof_frwk_i2c_write(struct tof_sensor_chip *chip, char reg, const char *buf, 
     addr_buf[0] = reg;
     memcpy(&addr_buf[1], buf, len);
     msg.flags = 0;
-    msg.addr = client->addr;
+    msg.addr = tof_glob_devaddr;
     msg.buf = addr_buf;
     msg.len = len + 1;
 
@@ -2389,7 +2392,7 @@ static void tof_idev_close(struct input_dev *dev)
     chip->open_refcnt--;
     if (!chip->open_refcnt) {
         dev_info(&dev->dev, "%s\n", __func__);
-        tof_poweroff_device(chip);
+        // tof_poweroff_device(chip);
         kfifo_reset(&chip->fifo_out);
     }
     AMS_MUTEX_UNLOCK(&chip->lock);
@@ -2703,6 +2706,7 @@ static int tof_probe(struct i2c_client *client,
     int i;
 
     dev_info(&client->dev, "I2C Address: %#04x\n", client->addr);
+    tof_glob_devaddr = TMF_DEFAULT_I2C_ADDR;
     tof_chip = devm_kzalloc(&client->dev, sizeof(*tof_chip), GFP_KERNEL);
     if (!tof_chip)
         return -ENOMEM;
@@ -2745,7 +2749,9 @@ static int tof_probe(struct i2c_client *client,
 
     // setup misc char device
     tof_chip->tof_mdev.fops = &tof_miscdev_fops;
-    tof_chip->tof_mdev.name = "tof";
+    char devname [10];
+    sprintf(devname, "tof_%02X", client->addr);
+    tof_chip->tof_mdev.name = devname;
     tof_chip->tof_mdev.minor = MISC_DYNAMIC_MINOR;
 
     error = tof_get_gpio_config(tof_chip);
@@ -2790,6 +2796,56 @@ static int tof_probe(struct i2c_client *client,
         goto gen_err;
     }
 
+    // Change I2C address only if it is different from default    
+    if(client->addr != TMF_DEFAULT_I2C_ADDR)
+    {
+        dev_info(&client->dev, "Changing I2C Address: %#04x -> %#04x\n", TMF_DEFAULT_I2C_ADDR, client->addr);
+        uint8_t buf[2];
+    
+        // set 0x3E --> I2C_ADDR_CHANGE register
+        buf[0] = 0x00;  
+        error = tof_i2c_write(tof_chip, 0x3E, buf, 1);
+        if (error) {
+            dev_err(&client->dev, "Error setting I2C_ADDR_CHANGE.\n");
+            AMS_MUTEX_UNLOCK(&tof_chip->lock);
+            goto gpio_err;
+        }
+        
+        // set 0x3B with new address --> I2C_SLAVE_ADDRESS register
+        buf[0] = (client->addr)<<1;  
+        error = tof_i2c_write(tof_chip, 0x3B, buf, 1);
+        if (error) {
+            dev_err(&client->dev, "Error setting I2C_SLAVE_ADDRESS.\n");
+            AMS_MUTEX_UNLOCK(&tof_chip->lock);
+            goto gpio_err;
+        }
+    
+        // set 0x08 with command 0x15 --> CMD_STAT gets CMD_WRITE_CONFIG_PAGE
+        buf[0] = 0x15;  
+        tof_i2c_write(tof_chip, 0x08, buf, 1); 
+        
+        // set 0x08 with command 0x21 --> CMD_STAT gets CMD_I2C_SLAVE_ADDRESS
+        buf[0] = 0x21;  
+        error = tof_i2c_write(tof_chip, 0x08, buf, 1);
+        if (error) {
+            dev_err(&client->dev, "Error setting CMD_I2C_SLAVE_ADDRESS.\n");
+            AMS_MUTEX_UNLOCK(&tof_chip->lock);
+            goto gpio_err;
+        }
+        mdelay(500);
+    
+        // Continue with new I2C address from device tree
+        tof_glob_devaddr = client->addr;
+
+        // check state using new I2C address -> APPID must be 0x3
+        error = tof_i2c_read(tof_chip, 0x00, &buf[0], 1);
+        if ((error != 0) || (buf[0] != 0x03)) {
+            dev_err(&client->dev, "ERROR: Check new I2C address, APPID -> %#04x.\n", buf[0]);
+            AMS_MUTEX_UNLOCK(&tof_chip->lock);
+            goto gpio_err;
+        }
+    }
+
     error = sysfs_create_groups(&client->dev.kobj, tof_groups);
     if (error) {
         dev_err(&client->dev, "Error creating sysfs attribute group.\n");
@@ -2825,9 +2881,9 @@ static int tof_probe(struct i2c_client *client,
 #endif
 
     // Turn off device until requested
-    tof_poweroff_device(tof_chip);
+    // tof_poweroff_device(tof_chip);
 
-    AMS_MUTEX_UNLOCK(&tof_chip->lock);
+    // AMS_MUTEX_UNLOCK(&tof_chip->lock);
     dev_info(&client->dev, "Probe ok.\n");
     return 0;
 
