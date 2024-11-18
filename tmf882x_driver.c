@@ -73,7 +73,6 @@
 }
 
 #define TMF_DEFAULT_I2C_ADDR 0x41
-static __u16 tof_glob_devaddr = TMF_DEFAULT_I2C_ADDR;
 
 struct tmf882x_platform_data {
     const char *tof_name;
@@ -2100,12 +2099,12 @@ int tof_frwk_i2c_read(struct tof_sensor_chip *chip, char reg, char *buf, int len
     int ret;
 
     msgs[0].flags = 0;
-    msgs[0].addr  = tof_glob_devaddr;
+    msgs[0].addr  = client->addr;
     msgs[0].len   = 1;
     msgs[0].buf   = &reg;
 
     msgs[1].flags = I2C_M_RD;
-    msgs[1].addr  = tof_glob_devaddr;
+    msgs[1].addr  = client->addr;
     msgs[1].len   = len;
     msgs[1].buf   = buf;
 
@@ -2138,7 +2137,7 @@ int tof_frwk_i2c_write(struct tof_sensor_chip *chip, char reg, const char *buf, 
     addr_buf[0] = reg;
     memcpy(&addr_buf[1], buf, len);
     msg.flags = 0;
-    msg.addr = tof_glob_devaddr;
+    msg.addr = client->addr;
     msg.buf = addr_buf;
     msg.len = len + 1;
 
@@ -2706,13 +2705,17 @@ static int tof_probe(struct i2c_client *client,
     int i;
 
     dev_info(&client->dev, "I2C Address: %#04x\n", client->addr);
-    tof_glob_devaddr = TMF_DEFAULT_I2C_ADDR;
+    __u16 devaddr_buf = client->addr;
+    client->addr = TMF_DEFAULT_I2C_ADDR;
     tof_chip = devm_kzalloc(&client->dev, sizeof(*tof_chip), GFP_KERNEL);
     if (!tof_chip)
         return -ENOMEM;
 
     /***** Setup data structures *****/
     mutex_init(&tof_chip->lock);
+    char idevname [30];
+    sprintf(idevname, "%s_%02X", TMF882X_NAME, devaddr_buf);
+    tof_pdata.tof_name = idevname;
     client->dev.platform_data = (void *)&tof_pdata;
     tof_chip->client = client;
     tof_chip->pdata = &tof_pdata;
@@ -2750,7 +2753,7 @@ static int tof_probe(struct i2c_client *client,
     // setup misc char device
     tof_chip->tof_mdev.fops = &tof_miscdev_fops;
     char devname [10];
-    sprintf(devname, "tof_%02X", client->addr);
+    sprintf(devname, "tof_%02X", devaddr_buf);
     tof_chip->tof_mdev.name = devname;
     tof_chip->tof_mdev.minor = MISC_DYNAMIC_MINOR;
 
@@ -2797,9 +2800,9 @@ static int tof_probe(struct i2c_client *client,
     }
 
     // Change I2C address only if it is different from default    
-    if(client->addr != TMF_DEFAULT_I2C_ADDR)
+    if(devaddr_buf != TMF_DEFAULT_I2C_ADDR)
     {
-        dev_info(&client->dev, "Changing I2C Address: %#04x -> %#04x\n", TMF_DEFAULT_I2C_ADDR, client->addr);
+        dev_info(&client->dev, "Changing I2C Address: %#04x -> %#04x\n", TMF_DEFAULT_I2C_ADDR, devaddr_buf);
         uint8_t buf[2];
     
         // set 0x3E --> I2C_ADDR_CHANGE register
@@ -2812,7 +2815,7 @@ static int tof_probe(struct i2c_client *client,
         }
         
         // set 0x3B with new address --> I2C_SLAVE_ADDRESS register
-        buf[0] = (client->addr)<<1;  
+        buf[0] = devaddr_buf<<1;  
         error = tof_i2c_write(tof_chip, 0x3B, buf, 1);
         if (error) {
             dev_err(&client->dev, "Error setting I2C_SLAVE_ADDRESS.\n");
@@ -2835,7 +2838,7 @@ static int tof_probe(struct i2c_client *client,
         mdelay(500);
     
         // Continue with new I2C address from device tree
-        tof_glob_devaddr = client->addr;
+        client->addr = devaddr_buf;
 
         // check state using new I2C address -> APPID must be 0x3
         error = tof_i2c_read(tof_chip, 0x00, &buf[0], 1);
@@ -2883,7 +2886,7 @@ static int tof_probe(struct i2c_client *client,
     // Turn off device until requested
     // tof_poweroff_device(tof_chip);
 
-    // AMS_MUTEX_UNLOCK(&tof_chip->lock);
+    AMS_MUTEX_UNLOCK(&tof_chip->lock);
     dev_info(&client->dev, "Probe ok.\n");
     return 0;
 
