@@ -2450,7 +2450,7 @@ static int tof_misc_release(struct inode *inode, struct file *f)
     chip->open_refcnt--;
     if (!chip->open_refcnt) {
         dev_info(&chip->client->dev, "%s\n", __func__);
-        tof_poweroff_device(chip);
+        // tof_poweroff_device(chip);
         kfifo_reset(&chip->fifo_out);
     }
     AMS_MUTEX_UNLOCK(&chip->lock);
