@@ -29,8 +29,8 @@
 #ifndef __TMF882X_H
 #define __TMF882X_H
 
-#include <linux/i2c/ams/tmf882x_config.h>
-#include <linux/i2c/ams/tmf882x_ioctl.h>
+#include "tmf882x_config.h"
+#include "tmf882x_ioctl.h"
 
 #ifdef __cplusplus
 extern "C" {
