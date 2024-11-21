@@ -2392,6 +2392,10 @@ static void tof_idev_close(struct input_dev *dev)
     if (!chip->open_refcnt) {
         dev_info(&dev->dev, "%s\n", __func__);
         // tof_poweroff_device(chip);
+        // stop measurements
+        if (tmf882x_stop(&chip->tof)) {
+            dev_info(&dev->dev, "Error stopping measurements\n");
+        }
         kfifo_reset(&chip->fifo_out);
     }
     AMS_MUTEX_UNLOCK(&chip->lock);
@@ -2885,6 +2889,15 @@ static int tof_probe(struct i2c_client *client,
 
     // Turn off device until requested
     // tof_poweroff_device(tof_chip);
+
+    // stop measurements
+    if (tmf882x_stop(&tof_chip->tof)) {
+        dev_info(&client->dev, "Error stopping measurements\n");
+        AMS_MUTEX_UNLOCK(&tof_chip->lock);
+        goto gen_err;
+    }
+    // stopping measurements, lets flush the ring buffer
+    kfifo_reset(&tof_chip->fifo_out);
 
     AMS_MUTEX_UNLOCK(&tof_chip->lock);
     dev_info(&client->dev, "Probe ok.\n");
