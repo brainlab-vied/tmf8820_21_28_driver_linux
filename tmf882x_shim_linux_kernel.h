@@ -84,9 +84,9 @@ static inline int32_t tof_queue_msg(struct tof_sensor_chip *chip, struct tmf882x
     return tof_frwk_queue_msg(chip, msg);
 }
 
-static inline void tof_get_timespec(struct timespec *ts)
+static inline void tof_get_timespec(struct timespec64 *ts)
 {
-    getnstimeofday(ts);
+    ktime_get_real_ts64(ts);
 }
 
 #endif
