@@ -49,6 +49,7 @@
 #include <linux/uaccess.h>
 #include <linux/poll.h>
 #include <linux/eventpoll.h>
+#include <linux/version.h>
 #ifdef CONFIG_TMF882X_QCOM_AP
 #include <linux/sensors.h>
 #endif
@@ -2700,8 +2701,11 @@ static int tmf882x_resume(struct device *dev)
     return 0;
 }
 
-static int tof_probe(struct i2c_client *client,
-                     const struct i2c_device_id *idp)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,2,0)
+static int tof_probe(struct i2c_client *client)
+#else
+static int tof_probe(struct i2c_client *client, const struct i2c_device_id *id)
+#endif
 {
     struct tof_sensor_chip *tof_chip;
     int error = 0;
@@ -2926,7 +2930,11 @@ input_dev_alloc_err:
     return error;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
 static void tof_remove(struct i2c_client *client)
+#else
+static int tof_remove(struct i2c_client *client)
+#endif
 {
     struct tof_sensor_chip *chip = i2c_get_clientdata(client);
 
@@ -2959,6 +2967,11 @@ static void tof_remove(struct i2c_client *client)
 
     i2c_set_clientdata(client, NULL);
     dev_info(&client->dev, "%s\n", __func__);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+    return;
+#else
+    return 0;
+#endif
 }
 
 static struct i2c_device_id tof_idtable[] = {
