@@ -2187,7 +2187,7 @@ static int32_t tmf882x_mode_app_set_calib_data(struct tmf882x_mode_app *app,
             return -1;
         }
 
-        tof_info(priv(app), "Write calibration data: %zu B", len + off);
+        tof_info(priv(app), "Write calibration data: %u B", len + off);
     }
 
     if (capture_state) {
