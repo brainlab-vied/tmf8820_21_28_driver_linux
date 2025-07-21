@@ -2623,7 +2623,7 @@ static const struct file_operations tof_miscdev_fops = {
     .unlocked_ioctl = tof_misc_ioctl,
     .open           = tof_misc_open,
     .release        = tof_misc_release,
-    .llseek         = no_llseek,
+    .llseek         = noop_llseek,
 };
 
 #ifdef CONFIG_TMF882X_QCOM_AP
