@@ -1,3 +1,6 @@
+# Snke fork
+**Please note**: to make this driver compatible with the Yocto/Xilinx Kernel 6.2 and above, the Snke fork integrates the [dev_kernel_interface_changes](https://github.com/ams-OSRAM/tmf8820_21_28_driver_linux/tree/dev_kernel_interface_changes) branch from AMS OSRAM parent repo into our own main branch! On the AMS OSRAM parent repo this branch is not yet part of [main](https://github.com/ams-OSRAM/tmf8820_21_28_driver_linux/tree/main) banch (at time of writing).
+
 # Time-of-Flight (ToF) Linux Reference Driver
 
 The driver was developed on tested with the [ams OSRAM TMF882X_EVM_DB_DEMO Evaluation kit](https://ams-osram.com/products/boards-kits-accessories/kits/ams-tmf882x-evm-db-demo-evaluation-kit). This EVM includes a [Rasperry PI Zero](https://www.raspberrypi.com/products/raspberry-pi-zero-w/) where the Linux driver is operating.
