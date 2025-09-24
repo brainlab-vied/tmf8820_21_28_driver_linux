@@ -2623,7 +2623,7 @@ static const struct file_operations tof_miscdev_fops = {
     .unlocked_ioctl = tof_misc_ioctl,
     .open           = tof_misc_open,
     .release        = tof_misc_release,
-    .llseek         = no_llseek,
+    .llseek         = noop_llseek,
 };
 
 #ifdef CONFIG_TMF882X_QCOM_AP
@@ -2701,11 +2701,7 @@ static int tmf882x_resume(struct device *dev)
     return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,2,0)
 static int tof_probe(struct i2c_client *client)
-#else
-static int tof_probe(struct i2c_client *client, const struct i2c_device_id *id)
-#endif
 {
     struct tof_sensor_chip *tof_chip;
     int error = 0;
@@ -2930,11 +2926,7 @@ input_dev_alloc_err:
     return error;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
 static void tof_remove(struct i2c_client *client)
-#else
-static int tof_remove(struct i2c_client *client)
-#endif
 {
     struct tof_sensor_chip *chip = i2c_get_clientdata(client);
 
@@ -2967,11 +2959,7 @@ static int tof_remove(struct i2c_client *client)
 
     i2c_set_clientdata(client, NULL);
     dev_info(&client->dev, "%s\n", __func__);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
     return;
-#else
-    return 0;
-#endif
 }
 
 static struct i2c_device_id tof_idtable[] = {
